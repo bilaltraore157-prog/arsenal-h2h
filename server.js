@@ -1,14 +1,25 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const cron = require('node-cron'); // <--- Le fix est ici
+const cron = require('node-cron');
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
+const path = require('path'); // Nécessaire pour les chemins de fichiers
 
 const app = express();
 app.use(cors());
 
+// --- CONFIGURATION DU SERVEUR WEB (POUR RENDER) ---
+// Dit à Render de servir tes fichiers (index.html, images, etc.)
+app.use(express.static(path.join(__dirname, './')));
+
+// Route principale pour afficher ton site
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // --- BASE DE DONNÉES ---
+// Note: Sur Render Free, db.json sera réinitialisé au redémarrage
 const adapter = new FileSync('db.json');
 const db = low(adapter);
 db.defaults({ pepites: [] }).write();
@@ -17,9 +28,9 @@ db.defaults({ pepites: [] }).write();
 const API_KEY_1 = 'ada81820a2a49262e8a10dbd5e3a38da'; 
 const API_KEY_2 = '7999234d3c7b31ea2ce94469a0079357'; 
 const API_HOST = 'v3.football.api-sports.io';
-const PORT = 3000;
+const PORT = process.env.PORT || 3000; // Utilise le port de Render ou 3000
 
-// --- LOGIQUE MATHÉMATIQUE ---
+// --- TA LOGIQUE MATHÉMATIQUE (GARDÉE INTACTE) ---
 function detecterCycleAlternance(h2hData) {
     if (!h2hData || h2hData.length < 3) return null;
     const resultats = h2hData.slice(0, 6).map(match => {
@@ -49,12 +60,10 @@ async function executerScan(cleAUtiliser, numeroCle) {
         });
 
         const fixtures = resp.data.response;
-        
-        // Clé 1 : Matchs 0 à 95 | Clé 2 : Matchs 96 à 190
+        if (!fixtures) return;
+
         let debut = (numeroCle === 1) ? 0 : 96;
         let fin = (numeroCle === 1) ? 95 : 190;
-
-        console.log(`📊 Analyse des matchs n°${debut} à ${fin} sur ${fixtures.length} dispos...`);
 
         for (let i = debut; i < Math.min(fixtures.length, fin); i++) {
             const f = fixtures[i];
@@ -85,18 +94,18 @@ async function executerScan(cleAUtiliser, numeroCle) {
     } catch (error) { console.error(`❌ Erreur API Clé ${numeroCle}:`, error.message); }
 }
 
-// --- ROUTES ---
+// --- ROUTES API ---
+// IMPORTANT: Ton index.html doit appeler ce lien pour remplir le tableau
 app.get('/api/cycles', (req, res) => {
     res.json(db.get('pepites').value());
 });
 
-// --- PLANNING (HEURE GMT / ABIDJAN) ---
+// --- PLANNING (ABIDJAN) ---
 cron.schedule('5 0 * * *', () => executerScan(API_KEY_1, 1));
 cron.schedule('0 12 * * *', () => executerScan(API_KEY_2, 2));
 
 app.listen(PORT, async () => {
     console.log(`🚀 L'ARSENAL DU DIGITAL : MODE 200 QUOTAS ACTIF`);
-    // On lance les deux scans au démarrage
+    // On lance un scan au démarrage pour remplir le tableau immédiatement
     await executerScan(API_KEY_1, 1);
-    await executerScan(API_KEY_2, 2);
 });
