@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'Arsenal du Digital | Expert Cycles</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --primary: #38bdf8;
+            --accent: #f472b6;
+            --text: #f1f5f9;
+        }
+
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding: 15px;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 500px; margin: auto; }
+
+        header { text-align: center; padding: 20px 0; }
+        h1 { font-size: 1.5rem; margin-bottom: 5px; }
+
+        /* SECTION GUIDE */
+        .guide-box {
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid var(--primary);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+        }
+
+        .guide-box h3 { margin-top: 0; color: var(--primary); }
+
+        /* CARDS MATCHS */
+        .card { 
+            background: var(--card); 
+            padding: 18px; 
+            border-radius: 16px; 
+            border-left: 6px solid var(--primary); 
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .status-badge { 
+            display: inline-block;
+            background: rgba(244, 114, 182, 0.15);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.75rem;
+            margin-bottom: 10px;
+        }
+
+        .time { 
+            font-size: 0.8rem; 
+            color: #94a3b8; 
+            float: right;
+        }
+
+        .teams { font-size: 1.2rem; font-weight: 600; margin: 8px 0; }
+        .league { color: #64748b; font-size: 0.85rem; }
+
+        /* RESPONSIVE */
+        @media (max-width: 480px) {
+            h1 { font-size: 1.3rem; }
+            .teams { font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🚀 L'Arsenal du Digital</h1>
+        <p style="color: #94a3b8; font-size: 0.9rem;">Intelligence Mathématique Appliquée</p>
+    </header>
+
+    <div class="guide-box">
+        <h3>📖 Comment ça marche ?</h3>
+        L'Arsenal scanne les <b>H2H (Face-à-face)</b> historiques. Il détecte uniquement les matchs où les deux équipes s'échangent les victoires sans jamais faire de match nul.
+        <br><br>
+        🎯 <b>L'Objectif :</b> Anticiper le "rendu de points" sur le 5ème ou 6ème match du cycle.
+    </div>
+
+    <div id="flux">
+        <p style="text-align: center; color: #64748b;">Analyse des flux en cours...</p>
+    </div>
+</div>
+
+<script>
+    async function chargerDonnees() {
+        try {
+            const res = await fetch('http://localhost:3000/api/cycles');
+            const data = await res.json();
+            const flux = document.getElementById('flux');
+
+            if (data.length === 0) {
+                flux.innerHTML = '<p style="text-align:center; color:#64748b;">Aucune pépite détectée pour le moment. Revenez après le scan de minuit !</p>';
+                return;
+            }
+
+            flux.innerHTML = '';
+            // On affiche du plus récent au plus ancien
+            data.reverse().forEach(m => {
+                const dateMatch = new Date(m.date);
+                const heureStr = dateMatch.toLocaleTimeString('fr-FR', {hour: '2digit', minute:'2digit'});
+
+                flux.innerHTML += `
+                    <div class="card">
+                        <span class="time">🕒 ${heureStr}</span>
+                        <div class="status-badge">${m.status}</div>
+                        <div class="teams">${m.equipes}</div>
+                        <div class="league">${m.ligue}</div>
+                    </div>
+                `;
+            });
+        } catch (e) {
+            document.getElementById('flux').innerHTML = '<p style="color: #ef4444; text-align:center;">🔴 Erreur de connexion au serveur</p>';
+        }
+    }
+
+    chargerDonnees();
+    // Rafraîchir toutes les 5 minutes
+    setInterval(chargerDonnees, 300000);
+</script>
+
+</body>
+</html>

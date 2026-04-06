@@ -1,0 +1,12 @@
+{
+  "name": "h2h-cycles",
+  "version": "1.0.0",
+  "main": "server.js",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "lowdb": "^1.0.0",
+    "node-cron": "^3.0.3"
+  }
+}
